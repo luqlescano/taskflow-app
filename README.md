@@ -22,7 +22,23 @@ En esta segunda entrega se refactorizó y estructuró el proyecto en módulos, i
 1. **ProfileScreen**: Renderiza el componente `ProfileCard` utilizando props dinámicas (`name`, `role`, `image`) e integración de estilos centralizados con `StyleSheet`.
 2. **HomeScreen**: Preparada como estructura base para los siguientes módulos del proyecto.
 
-### Instalación y Ejecución Local
+## Checkpoint 3: Formulario de Creación y Validaciones
+
+En esta tercera entrega se implementó la pantalla de creación de tareas (`AddTaskScreen`), incorporando gestión de estado local, validaciones en tiempo real, selector de categorías y feedback visual interactivo.
+
+### 📱 Nuevas Funcionalidades y Componentes
+
+- **AddTaskScreen**: Pantalla principal para registrar nuevas tareas con formulario controlado (`title`, `description`, `category`).
+- **CategorySelector**: Componente reutilizable en `src/components` para la selección interactiva de categorías, inicializado en `"Trabajo"`.
+- **Validaciones y UX**:
+  - Validación del título (mínimo 5 caracteres) y descripción (mínimo 10 caracteres).
+  - Feedback de foco visual (`inputFocused`) y bordes de error (`inputError`) con mensajes dinámicos.
+  - Estado deshabilitado visual y funcional en el botón de guardado ante presencia de errores.
+  - Gestión de teclado con `KeyboardAvoidingView` y descarte al tocar fuera con `TouchableWithoutFeedback`.
+- **Simulación de API**: Procesamiento en `handleAddTask` para crear el objeto `newTask`, log en consola, alerta de confirmación nativa y reseteo de campos.
+- **Safe Area Context**: Integración global de `SafeAreaProvider` y `useSafeAreaInsets` para garantizar la adaptabilidad visual en dispositivos con notch / Dynamic Island.
+
+## Instalación y Ejecución Local
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno de desarrollo:
 
