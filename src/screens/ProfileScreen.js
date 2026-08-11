@@ -3,15 +3,9 @@ import { View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ProfileCard } from "../components/ProfileCard";
 import { colors } from "../constants/colors";
-import avatarImg from "../assets/user-placeholder.png";
+import { userData } from "../constants/user";
 
 export const ProfileScreen = () => {
-  const userData = {
-    name: "Lucas Lescano",
-    role: "Full Stack Developer",
-    image: avatarImg,
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.content}>

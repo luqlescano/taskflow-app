@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import { CategorySelector } from "../components/CategorySelector";
 
-export const AddTaskScreen = () => {
+export const AddTaskScreen = ({ onAddTask }) => {
   // Hook para obtener el espacio seguro superior exacto del dispositivo
   const insets = useSafeAreaInsets();
 
@@ -52,16 +52,15 @@ export const AddTaskScreen = () => {
   const titleError = getTitleError();
   const descriptionError = getDescriptionError();
 
-  // Condicional para saber si hay errores activos tras el envío
-  const hasErrors = isSubmitted && (!!titleError || !!descriptionError);
+  // Validez en tiempo real, independiente de si ya se intentó enviar
+  const isTitleValid = title.trim().length >= 5;
+  const isDescriptionValid = description.trim().length >= 10;
+  const isFormValid = isTitleValid && isDescriptionValid;
 
   const handleAddTask = () => {
     setIsSubmitted(true);
 
-    const isTitleValid = title.trim().length >= 5;
-    const isDescValid = description.trim().length >= 10;
-
-    if (!isTitleValid || !isDescValid) {
+    if (!isFormValid) {
       return;
     }
 
@@ -73,9 +72,9 @@ export const AddTaskScreen = () => {
       createdAt: new Date().toISOString(),
     };
 
-    console.log("Tarea capturada:", newTask);
+    onAddTask?.(newTask);
 
-    Alert.alert("Éxito", "Tarea capturada localmente", [
+    Alert.alert("Éxito", "Tarea creada correctamente", [
       {
         text: "OK",
         onPress: () => {
@@ -167,16 +166,16 @@ export const AddTaskScreen = () => {
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                hasErrors && styles.submitButtonDisabled,
+                !isFormValid && styles.submitButtonDisabled,
               ]}
               onPress={handleAddTask}
               activeOpacity={0.6}
-              disabled={hasErrors}
+              disabled={!isFormValid}
             >
               <Text
                 style={[
                   styles.submitButtonText,
-                  hasErrors && styles.submitButtonTextDisabled,
+                  !isFormValid && styles.submitButtonTextDisabled,
                 ]}
               >
                 Guardar Tarea

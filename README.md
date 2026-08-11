@@ -38,6 +38,19 @@ En esta tercera entrega se implementó la pantalla de creación de tareas (`AddT
 - **Simulación de API**: Procesamiento en `handleAddTask` para crear el objeto `newTask`, log en consola, alerta de confirmación nativa y reseteo de campos.
 - **Safe Area Context**: Integración global de `SafeAreaProvider` y `useSafeAreaInsets` para garantizar la adaptabilidad visual en dispositivos con notch / Dynamic Island.
 
+## Checkpoint 4: Detalle de Tarea y Estados Vacíos
+
+En esta cuarta entrega se añadió la capa de detalle y manejo de estados de `HomeScreen`, permitiendo visualizar cada tarea creada, gestionar el estado vacío de la lista y eliminar tareas, además de reorganizar la estructura de navegación simulada del proyecto para mantener `App.js` como punto de entrada mínimo.
+
+### 📱 Nuevas Funcionalidades y Componentes
+
+- **HomeScreen**: recibe el arreglo `tasks` por props y gestiona el estado `selectedTask` (`useState(null)`). Renderiza condicionalmente el `EmptyState`, la `FlatList` de tareas o el `TaskDetailScreen`, según corresponda.
+- **EmptyState**: componente en `src/components` que se muestra cuando no hay tareas cargadas, invitando al usuario a crear la primera.
+- **TaskDetailScreen**: pantalla en `src/screens` que recibe la tarea seleccionada y muestra título, descripción, categoría y fecha de creación formateada, con botón "Volver" y botón "🗑️ Eliminar" (con confirmación vía `Alert.alert`) para borrar la tarea.
+- **ProfileCard en HomeScreen**: se reutiliza el componente `ProfileCard` (creado en Checkpoint 2) en la vista de lista de tareas, junto con `src/constants/user.js`, que centraliza los datos del usuario compartidos entre `ProfileScreen` y `HomeScreen`.
+- **RootScreen y TabBar**: se extrajo a `src/screens/RootScreen.js` el estado compartido (`tasks`, `activeScreen`) y los handlers (`handleAddTask`, `handleDeleteTask`), junto con `src/components/TabBar.js` como selector simple entre "Mis Tareas" y "Nueva Tarea" (a reemplazar por `React Navigation` en el próximo módulo). `App.js` vuelve a quedar mínimo, solo con `SafeAreaProvider`, `StatusBar` y `RootScreen`.
+- **AddTaskScreen**: el botón "Guardar Tarea" ahora se habilita en tiempo real según la validez del formulario (`isFormValid`), en lugar de esperar a un intento de envío fallido.
+
 ## Instalación y Ejecución Local
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno de desarrollo:
