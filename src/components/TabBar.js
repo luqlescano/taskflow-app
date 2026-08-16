@@ -1,35 +1,51 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 
-const tabs = [
-  { key: "home", label: "Mis Tareas" },
-  { key: "add", label: "Nueva Tarea" },
-];
+const ICONS_BY_ROUTE = {
+  Home: { active: "list", inactive: "list-outline" },
+  Profile: { active: "person", inactive: "person-outline" },
+};
 
-export const TabBar = ({ activeScreen, onChangeScreen }) => {
+export const TabBar = ({ state, descriptors, navigation }) => {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.tabBar, { paddingBottom: insets.bottom || 12 }]}>
-      {tabs.map((tab) => {
-        const isActive = activeScreen === tab.key;
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const label = options.tabBarLabel ?? options.title ?? route.name;
+        const isActive = state.index === index;
+        const icons = ICONS_BY_ROUTE[route.name];
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isActive && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
         return (
           <TouchableOpacity
-            key={tab.key}
+            key={route.key}
             style={[styles.tabButton, isActive && styles.tabButtonActive]}
-            onPress={() => onChangeScreen(tab.key)}
+            onPress={onPress}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityLabel={label}
           >
-            <Text
-              style={[
-                styles.tabButtonText,
-                isActive && styles.tabButtonTextActive,
-              ]}
-            >
-              {tab.label}
-            </Text>
+            <Ionicons
+              name={isActive ? icons.active : icons.inactive}
+              size={22}
+              color={isActive ? colors.primary : colors.textSecondary}
+            />
           </TouchableOpacity>
         );
       })}
@@ -55,13 +71,5 @@ const styles = StyleSheet.create({
   },
   tabButtonActive: {
     backgroundColor: colors.inputBackground,
-  },
-  tabButtonText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  tabButtonTextActive: {
-    color: colors.primary,
   },
 });

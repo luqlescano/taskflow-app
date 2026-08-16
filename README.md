@@ -51,6 +51,32 @@ En esta cuarta entrega se añadió la capa de detalle y manejo de estados de `Ho
 - **RootScreen y TabBar**: se extrajo a `src/screens/RootScreen.js` el estado compartido (`tasks`, `activeScreen`) y los handlers (`handleAddTask`, `handleDeleteTask`), junto con `src/components/TabBar.js` como selector simple entre "Mis Tareas" y "Nueva Tarea" (a reemplazar por `React Navigation` en el próximo módulo). `App.js` vuelve a quedar mínimo, solo con `SafeAreaProvider`, `StatusBar` y `RootScreen`.
 - **AddTaskScreen**: el botón "Guardar Tarea" ahora se habilita en tiempo real según la validez del formulario (`isFormValid`), en lugar de esperar a un intento de envío fallido.
 
+## Checkpoint 5: Navegación con React Navigation
+
+En esta quinta entrega se reemplazó la navegación simulada por estado (`activeScreen` en `RootScreen`) por una estructura profesional con `React Navigation`, consolidando la app en un árbol de navegadores anidados (Tab + Stack).
+
+### Estructura de navegación
+
+```
+Tab.Navigator (src/navigation/AppNavigator.js)
+├── Home  → Stack.Navigator (headerShown: false a nivel tab)
+│   ├── TaskList   (ruta inicial)
+│   ├── TaskDetail (recibe taskId y title por route.params)
+│   └── TaskForm   (accesible desde el botón "+" del header de TaskList)
+└── Profile
+```
+
+### 📱 Nuevas Funcionalidades y Componentes
+
+- **AppNavigator**: nuevo archivo `src/navigation/AppNavigator.js` que centraliza toda la configuración de navegación y reemplaza a `RootScreen` (eliminado) como punto de orquestación. Mantiene el estado `tasks` (`useState`) y los handlers `handleAddTask` / `handleDeleteTask` / `handleToggleTaskComplete`, inyectándolos a las pantallas mediante el patrón de *render props* de `Stack.Screen`.
+- **Bottom Tab Navigator**: `createBottomTabNavigator` con las pestañas `Home` y `Profile`, usando `TabBar` (adaptado desde el checkpoint anterior) como `tabBar` personalizado. Las etiquetas de texto se reemplazaron por íconos vectoriales de `@expo/vector-icons` (`list` / `person`), que cambian de color según la pestaña activa — conectado a `state` / `descriptors` / `navigation` de React Navigation en lugar de un `useState` local.
+- **Native Stack anidado**: la pestaña `Home` es en realidad un `createNativeStackNavigator` (`TaskList` → `TaskDetail`), cumpliendo con la arquitectura anidada Tab + Stack pedida en la consigna.
+- **TaskListScreen** (antes `HomeScreen`): navega a `TaskDetail` pasando `taskId` y `title` por `route.params` con `navigation.navigate()`. Ya no renderiza el detalle "a mano" ni incluye el `ProfileCard` (se dejó únicamente en la pestaña Perfil, para no duplicarlo). Cada card de tarea suma un ícono circular a la izquierda (`ellipse-outline` / `checkmark-circle`) que permite marcarla como completada sin entrar al detalle; las tareas completadas se muestran con opacidad reducida.
+- **TaskDetailScreen**: recibe `route.params.taskId` en lugar del objeto `task` completo por props, y busca la tarea en el array `tasks` inyectado desde `AppNavigator`. El botón de eliminar se movió al header nativo (`headerRight`, ícono `trash-outline`), manteniendo la confirmación vía `Alert.alert`. Se agregó un botón "Marcar como completada" / "Marcar como pendiente" debajo de la descripción, que alterna el estado `completed` de la tarea (sincronizado con el ícono de la lista).
+- **TaskFormScreen** (antes `AddTaskScreen`): tras presionar "Guardar Tarea", dispara el `onAddTask` recibido por props (la tarea nace con `completed: false`) y ejecuta `navigation.popToTop()` para volver a `TaskList`. Se usó `popToTop()` en lugar de `navigate('TaskList')` porque este último empujaba una instancia nueva de la pantalla encima de la existente (dejando un botón "atrás" colgado hacia el formulario) en vez de volver a la que ya estaba en el stack.
+- **Headers nativos**: se activaron los headers del Stack (antes ocultos, con títulos manejados a mano dentro de cada pantalla), estilizados con la misma paleta de `src/constants/colors.js` (`cardBackground`, `textPrimary`, `primary`) para mantener coherencia visual y mostrar títulos acordes a la pantalla activa. En iOS, `headerBackButtonDisplayMode: "minimal"` deja el botón de volver solo con el ícono (sin el texto de la pantalla anterior), igual que en Android.
+- **Dependencias nuevas**: `@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`, `react-native-screens` y `@expo/vector-icons`.
+
 ## Instalación y Ejecución Local
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno de desarrollo:

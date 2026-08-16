@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
@@ -19,35 +18,13 @@ const formatDate = (isoString) => {
   });
 };
 
-export const TaskDetailScreen = ({ task, onBack, onDelete }) => {
-  const handleDelete = () => {
-    Alert.alert(
-      "Eliminar tarea",
-      `¿Seguro que querés eliminar "${task.title}"?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: onDelete },
-      ],
-    );
-  };
+export const TaskDetailScreen = ({ route, tasks, onToggleComplete }) => {
+  const { taskId } = route.params;
+  const task = tasks.find((item) => item.id === taskId);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={onBack} activeOpacity={0.7}>
-            <Text style={styles.backButtonText}>{"‹ Volver"}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.deleteButtonText}>{"🗑️ Eliminar"}</Text>
-          </TouchableOpacity>
-        </View>
-
         <Text style={styles.title}>{task.title}</Text>
 
         <View style={styles.metaRow}>
@@ -61,6 +38,26 @@ export const TaskDetailScreen = ({ task, onBack, onDelete }) => {
 
         <Text style={styles.sectionLabel}>Descripción</Text>
         <Text style={styles.description}>{task.description}</Text>
+
+        <TouchableOpacity
+          style={[
+            styles.completeButton,
+            task.completed && styles.completeButtonDone,
+          ]}
+          onPress={() => onToggleComplete(task.id)}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.completeButtonText,
+              task.completed && styles.completeButtonTextDone,
+            ]}
+          >
+            {task.completed
+              ? "Marcar como pendiente"
+              : "Marcar como completada"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -75,25 +72,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButtonText: {
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  deleteButton: {
-    paddingHorizontal: 4,
-  },
-  deleteButtonText: {
-    color: colors.error,
-    fontSize: 16,
-    fontWeight: "600",
   },
   title: {
     fontSize: 26,
@@ -139,5 +117,25 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 16,
     lineHeight: 24,
+  },
+  completeButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 24,
+  },
+  completeButtonDone: {
+    backgroundColor: colors.inputBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  completeButtonText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  completeButtonTextDone: {
+    color: colors.textSecondary,
   },
 });

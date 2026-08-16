@@ -7,7 +7,7 @@ import { userData } from "../constants/user";
 
 export const ProfileScreen = () => {
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <View style={styles.content}>
         <ProfileCard
           name={userData.name}

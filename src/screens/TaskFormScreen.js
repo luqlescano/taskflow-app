@@ -12,14 +12,10 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import { CategorySelector } from "../components/CategorySelector";
 
-export const AddTaskScreen = ({ onAddTask }) => {
-  // Hook para obtener el espacio seguro superior exacto del dispositivo
-  const insets = useSafeAreaInsets();
-
+export const TaskFormScreen = ({ navigation, onAddTask }) => {
   // Estado local
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -70,9 +66,11 @@ export const AddTaskScreen = ({ onAddTask }) => {
       description: description.trim(),
       category,
       createdAt: new Date().toISOString(),
+      completed: false,
     };
 
     onAddTask?.(newTask);
+    navigation.popToTop();
 
     Alert.alert("Éxito", "Tarea creada correctamente", [
       {
@@ -88,12 +86,7 @@ export const AddTaskScreen = ({ onAddTask }) => {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
-      ]}
-    >
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -103,8 +96,6 @@ export const AddTaskScreen = ({ onAddTask }) => {
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.headerTitle}>Nueva Tarea</Text>
-
             {/* Campo Título */}
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Título</Text>
@@ -195,14 +186,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.textPrimary,
-    marginBottom: 24,
   },
   fieldContainer: {
     marginBottom: 20,
