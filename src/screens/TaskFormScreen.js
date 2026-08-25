@@ -12,10 +12,14 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
+import { useDispatch } from "react-redux";
 import { colors } from "../constants/colors";
 import { CategorySelector } from "../components/CategorySelector";
+import { addTask } from "../store/taskSlice";
 
-export const TaskFormScreen = ({ navigation, onAddTask }) => {
+export const TaskFormScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+
   // Estado local
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -60,16 +64,13 @@ export const TaskFormScreen = ({ navigation, onAddTask }) => {
       return;
     }
 
-    const newTask = {
-      id: Date.now().toString(),
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      createdAt: new Date().toISOString(),
-      completed: false,
-    };
-
-    onAddTask?.(newTask);
+    dispatch(
+      addTask({
+        title: title.trim(),
+        description: description.trim(),
+        category,
+      }),
+    );
     navigation.popToTop();
 
     Alert.alert("Éxito", "Tarea creada correctamente", [

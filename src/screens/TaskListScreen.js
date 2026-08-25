@@ -8,17 +8,65 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useDispatch, useSelector } from "react-redux";
 import { colors } from "../constants/colors";
 import { EmptyState } from "../components/EmptyState";
+import { toggleTaskStatus, setFilter } from "../store/taskSlice";
 
-export const TaskListScreen = ({ navigation, tasks, onToggleComplete }) => {
+const FILTERS = [
+  { label: "Todas", value: "all" },
+  { label: "Pendientes", value: "pending" },
+  { label: "Completadas", value: "completed" },
+];
+
+export const TaskListScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const tasks = useSelector((state) => state.tasks.items);
+  const filter = useSelector((state) => state.tasks.filter);
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filter === "pending") return !task.completed;
+    if (filter === "completed") return task.completed;
+    return true;
+  });
+
+  const onToggleComplete = (taskId) => dispatch(toggleTaskStatus(taskId));
+
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
-      {tasks.length === 0 ? (
+      <View style={styles.filterContainer}>
+        {FILTERS.map((item) => {
+          const isSelected = filter === item.value;
+          return (
+            <TouchableOpacity
+              key={item.value}
+              style={[
+                styles.chip,
+                isSelected ? styles.chipSelected : styles.chipUnselected,
+              ]}
+              onPress={() => dispatch(setFilter(item.value))}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  isSelected
+                    ? styles.chipTextSelected
+                    : styles.chipTextUnselected,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {filteredTasks.length === 0 ? (
         <EmptyState />
       ) : (
         <FlatList
-          data={tasks}
+          data={filteredTasks}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
@@ -76,6 +124,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 24,
+  },
+  filterContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingTop: 20,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipUnselected: {
+    backgroundColor: colors.chipUnselected,
+    borderColor: colors.border,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  chipTextSelected: {
+    color: colors.textPrimary,
+  },
+  chipTextUnselected: {
+    color: colors.textSecondary,
   },
   listContent: {
     paddingTop: 20,

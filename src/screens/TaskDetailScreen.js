@@ -7,7 +7,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
 import { colors } from "../constants/colors";
+import { toggleTaskStatus } from "../store/taskSlice";
 
 const formatDate = (isoString) => {
   if (!isoString) return "Sin fecha";
@@ -18,9 +20,13 @@ const formatDate = (isoString) => {
   });
 };
 
-export const TaskDetailScreen = ({ route, tasks, onToggleComplete }) => {
+export const TaskDetailScreen = ({ route }) => {
+  const dispatch = useDispatch();
   const { taskId } = route.params;
-  const task = tasks.find((item) => item.id === taskId);
+  const task = useSelector((state) =>
+    state.tasks.items.find((item) => item.id === taskId),
+  );
+  const onToggleComplete = (id) => dispatch(toggleTaskStatus(id));
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>

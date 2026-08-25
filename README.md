@@ -77,6 +77,29 @@ Tab.Navigator (src/navigation/AppNavigator.js)
 - **Headers nativos**: se activaron los headers del Stack (antes ocultos, con títulos manejados a mano dentro de cada pantalla), estilizados con la misma paleta de `src/constants/colors.js` (`cardBackground`, `textPrimary`, `primary`) para mantener coherencia visual y mostrar títulos acordes a la pantalla activa. En iOS, `headerBackButtonDisplayMode: "minimal"` deja el botón de volver solo con el ícono (sin el texto de la pantalla anterior), igual que en Android.
 - **Dependencias nuevas**: `@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`, `react-native-screens` y `@expo/vector-icons`.
 
+## Checkpoint 6: Estado Global con Redux Toolkit
+
+En esta sexta entrega se migró la gestión de tareas del `useState` local de `AppNavigator` a un store global con **Redux Toolkit**, eliminando el prop-drilling entre pantallas y sumando un filtro de tareas que persiste al navegar.
+
+### Estructura del store
+
+```
+src/store/
+├── store.js       → configureStore({ reducer: { tasks } })
+└── taskSlice.js    → createSlice("tasks"): items (con datos de ejemplo) + filter
+```
+
+### 📱 Nuevas Funcionalidades y Componentes
+
+- **`store.js`**: configura el store central de la app con `configureStore`.
+- **`taskSlice.js`**: define el slice `tasks` con estado inicial `{ items: [...tareas de ejemplo], filter: "all" }` y los reducers `addTask` (genera `id`/`createdAt` automáticamente vía `prepare`), `toggleTaskStatus`, `deleteTask` y `setFilter`.
+- **`App.js`**: envuelto con `<Provider store={store}>` para que toda la navegación tenga acceso al estado global.
+- **`AppNavigator.js`**: ya no mantiene `tasks` en `useState` ni lo pasa por props; el botón de eliminar del header despacha `deleteTask` directamente con `useDispatch`.
+- **`TaskListScreen`**: lee las tareas con `useSelector` (ya filtradas según `state.tasks.filter`) y suma un selector de filtro (chips "Todas" / "Pendientes" / "Completadas", con el mismo estilo visual que `CategorySelector`) que despacha `setFilter`. Al vivir en el store, el filtro se mantiene aunque se navegue a otra pestaña.
+- **`TaskFormScreen`**: reemplaza el `onAddTask` por props por un `dispatch(addTask({...}))`.
+- **`TaskDetailScreen`**: obtiene la tarea con `useSelector` buscándola por `taskId` en lugar de recibirla por props, y usa `useDispatch` para `toggleTaskStatus`.
+- **Dependencias nuevas**: `@reduxjs/toolkit` y `react-redux`.
+
 ## Instalación y Ejecución Local
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno de desarrollo:

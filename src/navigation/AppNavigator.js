@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { Alert, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useDispatch } from "react-redux";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -10,6 +11,7 @@ import { TaskFormScreen } from "../screens/TaskFormScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { TabBar } from "../components/TabBar";
 import { colors } from "../constants/colors";
+import { deleteTask } from "../store/taskSlice";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -22,7 +24,9 @@ const screenOptions = {
   headerBackButtonDisplayMode: "minimal",
 };
 
-const HomeStack = ({ tasks, onAddTask, onDeleteTask, onToggleComplete }) => {
+const HomeStack = () => {
+  const dispatch = useDispatch();
+
   return (
     <Stack.Navigator initialRouteName="TaskList" screenOptions={screenOptions}>
       <Stack.Screen
@@ -47,13 +51,7 @@ const HomeStack = ({ tasks, onAddTask, onDeleteTask, onToggleComplete }) => {
           ),
         })}
       >
-        {(props) => (
-          <TaskListScreen
-            {...props}
-            tasks={tasks}
-            onToggleComplete={onToggleComplete}
-          />
-        )}
+        {(props) => <TaskListScreen {...props} />}
       </Stack.Screen>
 
       <Stack.Screen
@@ -72,7 +70,7 @@ const HomeStack = ({ tasks, onAddTask, onDeleteTask, onToggleComplete }) => {
                       text: "Eliminar",
                       style: "destructive",
                       onPress: () => {
-                        onDeleteTask(route.params.taskId);
+                        dispatch(deleteTask(route.params.taskId));
                         navigation.goBack();
                       },
                     },
@@ -86,41 +84,17 @@ const HomeStack = ({ tasks, onAddTask, onDeleteTask, onToggleComplete }) => {
           ),
         })}
       >
-        {(props) => (
-          <TaskDetailScreen
-            {...props}
-            tasks={tasks}
-            onToggleComplete={onToggleComplete}
-          />
-        )}
+        {(props) => <TaskDetailScreen {...props} />}
       </Stack.Screen>
 
       <Stack.Screen name="TaskForm" options={{ title: "Nueva Tarea" }}>
-        {(props) => <TaskFormScreen {...props} onAddTask={onAddTask} />}
+        {(props) => <TaskFormScreen {...props} />}
       </Stack.Screen>
     </Stack.Navigator>
   );
 };
 
 export const AppNavigator = () => {
-  const [tasks, setTasks] = useState([]);
-
-  const handleAddTask = (newTask) => {
-    setTasks((prevTasks) => [newTask, ...prevTasks]);
-  };
-
-  const handleDeleteTask = (taskId) => {
-    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-  };
-
-  const handleToggleTaskComplete = (taskId) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task,
-      ),
-    );
-  };
-
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -131,14 +105,7 @@ export const AppNavigator = () => {
           name="Home"
           options={{ headerShown: false, title: "Mis Tareas" }}
         >
-          {() => (
-            <HomeStack
-              tasks={tasks}
-              onAddTask={handleAddTask}
-              onDeleteTask={handleDeleteTask}
-              onToggleComplete={handleToggleTaskComplete}
-            />
-          )}
+          {() => <HomeStack />}
         </Tab.Screen>
 
         <Tab.Screen
