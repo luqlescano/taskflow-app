@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { colors } from "../constants/colors";
-import { toggleTaskStatus } from "../store/taskSlice";
+import { toggleTask } from "../store/taskSlice";
 
 const formatDate = (isoString) => {
   if (!isoString) return "Sin fecha";
@@ -26,7 +26,11 @@ export const TaskDetailScreen = ({ route }) => {
   const task = useSelector((state) =>
     state.tasks.items.find((item) => item.id === taskId),
   );
-  const onToggleComplete = (id) => dispatch(toggleTaskStatus(id));
+  // La tarea puede desaparecer del store durante el borrado.
+  if (!task) return null;
+
+  const onToggleComplete = () =>
+    dispatch(toggleTask({ id: task.id, completed: task.completed }));
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -50,7 +54,7 @@ export const TaskDetailScreen = ({ route }) => {
             styles.completeButton,
             task.completed && styles.completeButtonDone,
           ]}
-          onPress={() => onToggleComplete(task.id)}
+          onPress={onToggleComplete}
           activeOpacity={0.7}
         >
           <Text

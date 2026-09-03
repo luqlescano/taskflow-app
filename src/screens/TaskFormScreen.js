@@ -12,13 +12,14 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { colors } from "../constants/colors";
 import { CategorySelector } from "../components/CategorySelector";
-import { addTask } from "../store/taskSlice";
+import { createTask } from "../store/taskSlice";
 
 export const TaskFormScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   // Estado local
   const [title, setTitle] = useState("");
@@ -57,33 +58,35 @@ export const TaskFormScreen = ({ navigation }) => {
   const isDescriptionValid = description.trim().length >= 10;
   const isFormValid = isTitleValid && isDescriptionValid;
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     setIsSubmitted(true);
+    if (!isFormValid) return;
 
-    if (!isFormValid) {
-      return;
-    }
+    try {
+      await dispatch(
+        createTask({
+          userId: user.uid,
+          title: title.trim(),
+          description: description.trim(),
+          category,
+        }),
+      ).unwrap();
 
-    dispatch(
-      addTask({
-        title: title.trim(),
-        description: description.trim(),
-        category,
-      }),
-    );
-    navigation.popToTop();
-
-    Alert.alert("Éxito", "Tarea creada correctamente", [
-      {
-        text: "OK",
-        onPress: () => {
-          setTitle("");
-          setDescription("");
-          setCategory("Trabajo");
-          setIsSubmitted(false);
+      navigation.popToTop();
+      Alert.alert("Éxito", "Tarea creada correctamente", [
+        {
+          text: "OK",
+          onPress: () => {
+            setTitle("");
+            setDescription("");
+            setCategory("Trabajo");
+            setIsSubmitted(false);
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (err) {
+      Alert.alert("Error", "No se pudo guardar la tarea. Intentá de nuevo.");
+    }
   };
 
   return (

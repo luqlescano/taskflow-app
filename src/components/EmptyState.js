@@ -7,7 +7,7 @@ export const EmptyState = () => {
     <View style={styles.container}>
       <Text style={styles.icon}>🗒️</Text>
       <Text style={styles.message}>
-        ¡No tenes tareas pendientes!{"\n"}Empeza creando una.
+        ¡Nada por aquí!
       </Text>
     </View>
   );

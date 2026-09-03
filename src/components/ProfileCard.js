@@ -8,7 +8,7 @@ export const ProfileCard = ({ name, role, image }) => {
       <Image source={image} style={styles.avatar} resizeMode="contain" />
       <View style={styles.infoContainer}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.role}>{role}</Text>
+        {role ? <Text style={styles.role}>{role}</Text> : null}
       </View>
     </View>
   );

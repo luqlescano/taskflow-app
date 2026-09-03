@@ -1,7 +1,7 @@
 import React from "react";
 import { Alert, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -11,18 +11,14 @@ import { TaskFormScreen } from "../screens/TaskFormScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
 import { TabBar } from "../components/TabBar";
 import { colors } from "../constants/colors";
-import { deleteTask } from "../store/taskSlice";
+import { removeTask } from "../store/taskSlice";
+import { screenOptions } from "./screenOptions";
+import { useAuthListener } from "../hooks/useAuthListener";
+import { AuthNavigator } from "./AuthNavigator";
+import { LoadingScreen } from "../screens/LoadingScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-const screenOptions = {
-  headerStyle: { backgroundColor: colors.cardBackground },
-  headerShadowVisible: false,
-  headerTintColor: colors.primary,
-  headerTitleStyle: { color: colors.textPrimary, fontWeight: "bold" },
-  headerBackButtonDisplayMode: "minimal",
-};
 
 const HomeStack = () => {
   const dispatch = useDispatch();
@@ -69,9 +65,18 @@ const HomeStack = () => {
                     {
                       text: "Eliminar",
                       style: "destructive",
-                      onPress: () => {
-                        dispatch(deleteTask(route.params.taskId));
-                        navigation.goBack();
+                      onPress: async () => {
+                        try {
+                          await dispatch(
+                            removeTask(route.params.taskId),
+                          ).unwrap();
+                          navigation.goBack();
+                        } catch {
+                          Alert.alert(
+                            "Error",
+                            "No se pudo eliminar la tarea. Intentá de nuevo.",
+                          );
+                        }
                       },
                     },
                   ],
@@ -95,25 +100,35 @@ const HomeStack = () => {
 };
 
 export const AppNavigator = () => {
+  useAuthListener();
+  const user = useSelector((state) => state.auth.user);
+  const authChecked = useSelector((state) => state.auth.authChecked);
+
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        tabBar={(props) => <TabBar {...props} />}
-        screenOptions={screenOptions}
-      >
-        <Tab.Screen
-          name="Home"
-          options={{ headerShown: false, title: "Mis Tareas" }}
+      {!authChecked ? (
+        <LoadingScreen />
+      ) : user ? (
+        <Tab.Navigator
+          tabBar={(props) => <TabBar {...props} />}
+          screenOptions={screenOptions}
         >
-          {() => <HomeStack />}
-        </Tab.Screen>
+          <Tab.Screen
+            name="Home"
+            options={{ headerShown: false, title: "Mis Tareas" }}
+          >
+            {() => <HomeStack />}
+          </Tab.Screen>
 
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ title: "Perfil" }}
-        />
-      </Tab.Navigator>
+          <Tab.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ title: "Perfil" }}
+          />
+        </Tab.Navigator>
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   );
 };

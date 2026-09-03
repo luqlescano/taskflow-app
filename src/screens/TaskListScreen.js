@@ -5,13 +5,14 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { colors } from "../constants/colors";
 import { EmptyState } from "../components/EmptyState";
-import { toggleTaskStatus, setFilter } from "../store/taskSlice";
+import { fetchTasks, toggleTask, setFilter } from "../store/taskSlice";
 
 const FILTERS = [
   { label: "Todas", value: "all" },
@@ -21,8 +22,14 @@ const FILTERS = [
 
 export const TaskListScreen = ({ navigation }) => {
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
   const tasks = useSelector((state) => state.tasks.items);
   const filter = useSelector((state) => state.tasks.filter);
+  const status = useSelector((state) => state.tasks.status);
+
+  React.useEffect(() => {
+    if (user) dispatch(fetchTasks(user.uid));
+  }, [dispatch, user?.uid]);
 
   const filteredTasks = tasks.filter((task) => {
     if (filter === "pending") return !task.completed;
@@ -30,7 +37,8 @@ export const TaskListScreen = ({ navigation }) => {
     return true;
   });
 
-  const onToggleComplete = (taskId) => dispatch(toggleTaskStatus(taskId));
+  const onToggleComplete = (task) =>
+    dispatch(toggleTask({ id: task.id, completed: task.completed }));
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -62,7 +70,11 @@ export const TaskListScreen = ({ navigation }) => {
         })}
       </View>
 
-      {filteredTasks.length === 0 ? (
+      {status === "loading" && tasks.length === 0 ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : filteredTasks.length === 0 ? (
         <EmptyState />
       ) : (
         <FlatList
@@ -84,7 +96,7 @@ export const TaskListScreen = ({ navigation }) => {
               }
             >
               <TouchableOpacity
-                onPress={() => onToggleComplete(item.id)}
+                onPress={() => onToggleComplete(item)}
                 activeOpacity={0.7}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.checkbox}
@@ -124,6 +136,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 24,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterContainer: {
     flexDirection: "row",

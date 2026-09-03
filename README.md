@@ -100,6 +100,98 @@ src/store/
 - **`TaskDetailScreen`**: obtiene la tarea con `useSelector` buscándola por `taskId` en lugar de recibirla por props, y usa `useDispatch` para `toggleTaskStatus`.
 - **Dependencias nuevas**: `@reduxjs/toolkit` y `react-redux`.
 
+## Checkpoint 7: Autenticación y Persistencia con Firebase
+
+En esta séptima entrega TaskFlow deja de ser una app local: se integró **Firebase Authentication** (email/contraseña) con rutas protegidas y persistencia de sesión, y las tareas pasaron a guardarse en **Cloud Firestore**, separadas por usuario y sincronizadas con el store de Redux.
+
+### Estructura nueva
+
+```
+src/services/
+├── firebaseConfig.js  → initializeApp + auth (persistencia AsyncStorage) + db (Firestore)
+├── authService.js     → createAccount / signIn / logOut + traducción de errores
+└── taskService.js     → CRUD sobre la colección "tasks" (filtrado por userId)
+
+src/store/authSlice.js  → sesión { user, isLoading, error } + thunks register/login/logout
+src/hooks/useAuthListener.js → onAuthStateChanged → dispatch(setUser)
+src/navigation/AuthNavigator.js → stack público (Login ↔ Register)
+src/navigation/screenOptions.js → headers compartidos entre stack público y privado
+src/screens/LoginScreen.js · RegisterScreen.js · LoadingScreen.js
+```
+
+### 📱 Nuevas funcionalidades
+
+- **Flujo de autenticación**: `LoginScreen` y `RegisterScreen` con validación en tiempo real (email válido, contraseña ≥ 6, confirmación de contraseña en el registro) y el mismo estilo de inputs que `TaskFormScreen`. Los errores de Firebase se traducen a mensajes en español (`mapAuthError`).
+- **Rutas protegidas**: `AppNavigator` renderiza `AuthNavigator` (público) o los Tabs (privado) según `state.auth.user`. Sin sesión, no hay forma de llegar a la lista de tareas.
+- **Persistencia de sesión**: `useAuthListener` registra `onAuthStateChanged` y despacha el usuario a Redux. Al reabrir la app, mientras se resuelve la sesión persistida se muestra `LoadingScreen`; si había sesión, entra directo a "Mis Tareas".
+- **CRUD en Firestore con separación por usuario**: cada tarea se guarda en la colección `tasks` con el campo `userId` (uid del usuario). `TaskListScreen` hace `fetchTasks(user.uid)` al montar y solo trae las tareas propias. Alta, cambio de estado y borrado impactan en Firestore y en Redux.
+- **Sincronización con Redux**: los datos de Firestore alimentan `state.tasks.items`; el filtro (Todas / Pendientes / Completadas) y el estado vacío siguen funcionando sobre la fuente persistida.
+- **Perfil**: `ProfileCard` muestra el email del usuario autenticado y se agregó el botón "Cerrar sesión" (con confirmación), que limpia el store de tareas y cierra la sesión en Firebase.
+- **Robustez**: los errores de autenticación se muestran en la UI; los errores de Firestore al crear o eliminar tareas se avisan con `Alert`, y los de lectura/cambio de estado quedan registrados en el estado sin cerrar la app.
+
+### 🔧 Configuración de Firebase
+
+El repo ya incluye un archivo `.env` apuntando a un **proyecto de Firebase de demo**, así que la app corre sin configuración previa (`git clone` → `npm install` → `npx expo start`). Este `.env` se versiona a propósito para facilitar la corrección; la config web de Firebase no es un secreto y la seguridad la dan las reglas de Firestore + Authentication.
+
+Para usar tu propio proyecto, reemplazá los valores del `.env` siguiendo estos pasos:
+
+1. Crear un proyecto en la [consola de Firebase](https://console.firebase.google.com/).
+2. **Authentication** → *Sign-in method* → habilitar **Email/Password**.
+3. **Firestore Database** → *Crear base de datos* (modo producción).
+4. En **Firestore → Rules**, pegar:
+
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /tasks/{taskId} {
+         allow read, update, delete: if request.auth != null
+           && request.auth.uid == resource.data.userId;
+         allow create: if request.auth != null
+           && request.auth.uid == request.resource.data.userId;
+       }
+     }
+   }
+   ```
+
+5. **Project settings → General → Your apps →** registrar una *Web app* y copiar la config.
+6. Pegar esos valores en el `.env` de la raíz (ver `.env.example` para los nombres de las variables):
+
+   ```
+   EXPO_PUBLIC_FIREBASE_API_KEY=...
+   EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+   EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
+   EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+   EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+   EXPO_PUBLIC_FIREBASE_APP_ID=...
+   ```
+
+### ✅ Cómo se probaron los flujos
+
+**1. Verificación automatizada del backend.** Se corrió un script (Node, con el SDK de Firebase) contra el proyecto real, ejercitando Auth + Firestore + reglas de seguridad y limpiando los usuarios de prueba al terminar. Resultado: **10/10 checks OK**.
+
+| Flujo | Resultado |
+|---|---|
+| Registro de usuario nuevo (`createUserWithEmailAndPassword`) | ✅ crea la cuenta en Authentication |
+| Login con credenciales correctas (`signInWithEmailAndPassword`) | ✅ |
+| Login con contraseña incorrecta | ✅ rechazado con `auth/invalid-credential` → "Email o contraseña incorrectos." |
+| Alta de tarea en `tasks` con `userId` y `completed: false` | ✅ el documento queda en Firestore |
+| Lectura filtrada `where("userId", "==", uid)` | ✅ solo devuelve las tareas propias |
+| Marcar como completada (`updateDoc { completed }`) | ✅ el campo cambia en el documento |
+| Eliminar tarea (`deleteDoc`) | ✅ el documento desaparece |
+| **Usuario B intenta leer las tareas de A** | ✅ **`permission-denied`** — las reglas de Firestore lo bloquean |
+| Usuario B ve su propia lista | ✅ vacía (0 documentos) |
+| Registro de un segundo usuario independiente | ✅ |
+
+**2. Build.** `npx expo export -p ios` genera el bundle sin errores de resolución con el `.env` cargado.
+
+**3. Pendiente de prueba en dispositivo (Expo Go).** El recorrido visual de las pantallas y, en particular, la **persistencia de sesión al cerrar y reabrir la app** (`onAuthStateChanged` + AsyncStorage) se validan en Expo Go:
+
+- [ ] Registro → entra directo a "Mis Tareas" (flujo privado)
+- [ ] Cerrar la app por completo con sesión activa → al reabrir entra directo a "Mis Tareas" sin pedir login
+- [ ] Crear / completar / eliminar tareas desde la UI y verlas reflejadas en la consola de Firebase
+- [ ] Cerrar sesión desde Perfil → vuelve a Login; al reingresar la lista se recarga desde Firestore
+
 ## Instalación y Ejecución Local
 
 Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno de desarrollo:
@@ -121,6 +213,8 @@ npm install
 ```bash
 npx expo start
 ```
+
+   El repo ya trae un `.env` con un proyecto de Firebase de demo, así que arranca sin pasos extra. Para usar tu propio proyecto, ver *Configuración de Firebase* en Checkpoint 7.
 
 4. **Ejecutá en tu dispositivo:**
    Escaneá el código QR desde la app Expo Go en tu celular (iOS/Android).
