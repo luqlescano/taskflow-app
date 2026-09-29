@@ -150,6 +150,11 @@ Para usar tu propio proyecto, reemplazá los valores del `.env` siguiendo estos 
          allow create: if request.auth != null
            && request.auth.uid == request.resource.data.userId;
        }
+
+       match /users/{userId} {
+         allow read, write: if request.auth != null
+           && request.auth.uid == userId;
+       }
      }
    }
    ```
@@ -185,12 +190,61 @@ Para usar tu propio proyecto, reemplazá los valores del `.env` siguiendo estos 
 
 **2. Build.** `npx expo export -p ios` genera el bundle sin errores de resolución con el `.env` cargado.
 
-**3. Pendiente de prueba en dispositivo (Expo Go).** El recorrido visual de las pantallas y, en particular, la **persistencia de sesión al cerrar y reabrir la app** (`onAuthStateChanged` + AsyncStorage) se validan en Expo Go:
+**3. Probado en dispositivo (iOS y Android).** El recorrido visual de las pantallas y, en particular, la **persistencia de sesión al cerrar y reabrir la app** (`onAuthStateChanged` + AsyncStorage) se validaron en Expo Go / simulador:
 
-- [ ] Registro → entra directo a "Mis Tareas" (flujo privado)
-- [ ] Cerrar la app por completo con sesión activa → al reabrir entra directo a "Mis Tareas" sin pedir login
-- [ ] Crear / completar / eliminar tareas desde la UI y verlas reflejadas en la consola de Firebase
-- [ ] Cerrar sesión desde Perfil → vuelve a Login; al reingresar la lista se recarga desde Firestore
+- [x] Registro → entra directo a "Mis Tareas" (flujo privado)
+- [x] Cerrar la app por completo con sesión activa → al reabrir entra directo a "Mis Tareas" sin pedir login
+- [x] Crear / completar / eliminar tareas desde la UI y verlas reflejadas en la consola de Firebase
+- [x] Cerrar sesión desde Perfil → vuelve a Login; al reingresar la lista se recarga desde Firestore
+
+## Checkpoint Final: Perfil con Avatar, Robustez y Despliegue
+
+En esta última entrega se cierra TaskFlow: se agregó la selección de avatar con `expo-image-picker`, se reforzó el manejo de errores en la lista de tareas, y se publicó el proyecto con EAS Update.
+
+### 📱 Nuevas funcionalidades
+
+- **Avatar de perfil (`expo-image-picker`)**: en `ProfileScreen`, tocar el avatar (o el ícono de cámara superpuesto) pide permiso de acceso a la galería, abre el selector nativo y guarda la imagen elegida. La URI se persiste en Firestore (`users/{uid}`, campo `avatarUri`) a través del nuevo `profileSlice` / `profileService.js`, siguiendo el mismo patrón que `taskSlice` / `taskService.js`. La imagen se refleja al instante (actualización optimista), aunque el guardado en Firestore todavía esté en curso.
+- **`ProfileCard`**: gana los props opcionales `onChangeAvatar` (hace tocable el avatar) e `isSaving` (spinner mientras se guarda). El `resizeMode` del avatar pasó de `"contain"` a `"cover"` para que fotos reales no queden recortadas con bordes vacíos.
+- **Robustez**:
+  - `toggleTask` ahora avisa por `Alert` si falla (por ejemplo, sin conexión), en vez de fallar en silencio como antes.
+  - `TaskListScreen` distingue el estado "no se pudo cargar" (con botón "Reintentar") del estado "no hay tareas" (`EmptyState`), que antes se mostraban igual.
+  - Cancelar la selección de imagen o negar el permiso de galería no rompe la pantalla: se corta en silencio o con un aviso, sin crashear.
+
+### 🚀 Despliegue
+
+La app se compiló con **EAS Build** (Android, perfil `preview`, distribución interna). Descarga directa del `.apk`, sin necesidad de cuenta de Expo ni Play Store:
+
+**https://expo.dev/artifacts/eas/JymnL8bsk05IOh0Ln3z09J0X1f1-dOozf93lGL2FWic.apk**
+
+Cómo se generó:
+
+```bash
+eas login
+eas init --account llescano
+eas build:configure --platform android
+eas build --platform android --profile preview
+```
+
+Referencias adicionales en la plataforma de Expo (estas dos requieren cuenta/login para verse, a diferencia del link del `.apk` de arriba):
+
+- Proyecto: https://expo.dev/accounts/llescano/projects/taskflow-app
+- Update publicado con EAS Update: https://expo.dev/accounts/llescano/projects/taskflow-app/updates/ed439b6c-0431-4ac8-8b85-2c65fa1c3233
+
+### ✅ Evidencia visual
+
+Probado en iOS (iPhone 17, iOS 26.5) y Android. Video completo del flujo (login → tareas → avatar → logout):
+
+<video src="docs/capturas/demo.mp4" controls width="360"></video>
+
+> Si tu visor de Markdown no reproduce el video embebido, está en [`docs/capturas/demo.mp4`](docs/capturas/demo.mp4).
+
+| Login | Lista de tareas | Detalle de tarea |
+|---|---|---|
+| ![Login](docs/capturas/01-login.png) | ![Lista de tareas](docs/capturas/02-lista-tareas.png) | ![Detalle de tarea](docs/capturas/03-detalle-tarea.png) |
+
+| Eliminar tarea | Perfil (avatar por defecto) | Perfil (avatar elegido) |
+|---|---|---|
+| ![Eliminar tarea](docs/capturas/04-eliminar-tarea.png) | ![Perfil sin avatar](docs/capturas/05-perfil-avatar-default.png) | ![Perfil con avatar](docs/capturas/06-perfil-avatar-nuevo.png) |
 
 ## Instalación y Ejecución Local
 

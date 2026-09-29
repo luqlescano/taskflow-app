@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,8 +38,18 @@ export const TaskListScreen = ({ navigation }) => {
     return true;
   });
 
-  const onToggleComplete = (task) =>
-    dispatch(toggleTask({ id: task.id, completed: task.completed }));
+  const onToggleComplete = async (task) => {
+    try {
+      await dispatch(
+        toggleTask({ id: task.id, completed: task.completed }),
+      ).unwrap();
+    } catch {
+      Alert.alert(
+        "Error",
+        "No se pudo actualizar la tarea. Revisá tu conexión e intentá de nuevo.",
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["left", "right"]}>
@@ -73,6 +84,22 @@ export const TaskListScreen = ({ navigation }) => {
       {status === "loading" && tasks.length === 0 ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : status === "failed" && tasks.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorTitle}>
+            No se pudieron cargar tus tareas.
+          </Text>
+          <Text style={styles.errorSubtitle}>
+            Revisá tu conexión e intentá de nuevo.
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => dispatch(fetchTasks(user.uid))}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
       ) : filteredTasks.length === 0 ? (
         <EmptyState />
@@ -141,6 +168,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  errorTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  errorSubtitle: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  retryButtonText: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: "600",
   },
   filterContainer: {
     flexDirection: "row",
